@@ -33,6 +33,24 @@ namespace ConsoleApplication1 {
 		static string top_level_href = "<A HREF='mysql-cgi.exe'>Back to Top</A>";
 		static string title_string = "C# MySQL CGI Shell";
 
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : debug_print
+//
+// Purpose   : Display message only if debug mode is active
+//
+// Inputs    : string message - the message to be displayed
+//
+// Output    : the requested message
+//
+// Returns   : nothing
+//
+// Example   : debug_print("The number of records is " + count);
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		static public void debug_print(string message)
 		{
 			if ( debug_mode != 0 ) {
@@ -40,8 +58,48 @@ namespace ConsoleApplication1 {
 			}
 			return;
 		}
+
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : parse_input_fields
+//
+// Purpose   : Parse the parameters passed to this CGI script
+//
+// Inputs    : (none)
+//
+// Output    : debug mode messages
+//
+// Returns   : nothing
+//
+// Example   : parse_input_fields();
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		static public void parse_input_fields()
 		{
+			if (System.Environment.GetEnvironmentVariable("REQUEST_METHOD").Equals("POST")) {
+				DataLength = Convert.ToInt32(System.Environment.GetEnvironmentVariable("CONTENT_LENGTH"));
+				debug_print("DataLength = " + DataLength);
+				if (DataLength > max_post_length) DataLength = max_post_length;  // Max length for POST data
+					for (int i = 0; i < DataLength; i++)
+						input_data += Convert.ToChar(Console.Read()).ToString();
+					// debug_print("<br/>Post Data length: " + DataLength.ToString() + " Post data: " + input_data);
+			}
+			else {
+				input_data = System.Environment.GetEnvironmentVariable("QUERY_STRING");
+				if ( input_data == null ) {
+					DataLength = 0;
+					input_data = "";
+					debug_print("<br/>The GET Query String was not specified");
+				}
+				else {
+					DataLength = input_data.Length;
+					debug_print("<br/>The GET Query String (env: QUERY_STRING): " + input_data);
+				}
+			}
+
 			debug_print("<H4>Parse the " + DataLength + " bytes of input_data</H4>");
 			if ( DataLength == 0 ) {
 				num_vars = 0;
@@ -62,12 +120,30 @@ namespace ConsoleApplication1 {
 			return;
 		} // end of parse_input_fields
 
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : generate_choose_schema
+//
+// Purpose   : Generate the code to select one of the available schemas
+//
+// Inputs    : (none)
+//
+// Output    : Code to select one of the available schemas
+//
+// Returns   : nothing
+//
+// Example   : generate_choose_schema();
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		static public void generate_choose_schema()
 		{
 			int count;
 			string schema;
 			string cs = @"server=localhost;userid=root;
-				password=mypassword;database=myschema";
+				password=archer-nx01;database=qwlc";
 			Console.WriteLine("<H3>Choose one of the following schemas</H3>");
 
 			MySqlConnection conn = null;
@@ -117,6 +193,24 @@ namespace ConsoleApplication1 {
 			return;
 		} // end of generate_choose_schema
 
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : generate_choose_table
+//
+// Purpose   : Generate code to choose a table under a schema
+//
+// Inputs    : (none)
+//
+// Output    : Code to choose one of the available tables
+//
+// Returns   : nothing
+//
+// Example   : generate_choose_table();
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		static public void generate_choose_table()
 		{
 			string schema = data_fields["schema"];
@@ -124,7 +218,7 @@ namespace ConsoleApplication1 {
 			string numbered_table;
 			int count;
 			string cs = @"server=localhost;userid=root;
-				password=mypassword;database=" + schema;
+				password=archer-nx01;database=" + schema;
 
 			Console.WriteLine("<H3>Choose one of the tables under the '" + schema + "' schema</H3>");
 
@@ -178,6 +272,24 @@ namespace ConsoleApplication1 {
 
 		} // end of generate_choose_table
 
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : describe_table
+//
+// Purpose   : Code to display the structure of the selected table
+//
+// Inputs    : (none)
+//
+// Output    : Description of the selected table
+//
+// Returns   : nothing
+//
+// Example   : describe_table();
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		static void describe_table()
 		{
 			string schema = data_fields["schema"];
@@ -186,7 +298,7 @@ namespace ConsoleApplication1 {
 			Console.WriteLine("<H3>Describe table '" + table + "' under schema '" + schema + "'</H3>");
 
 			int count;
-			string cs = "server=localhost;userid=root;password=mypassword;database=" + schema;
+			string cs = "server=localhost;userid=root;password=archer-nx01;database=" + schema;
 
 			MySqlConnection conn = null;
 			MySqlDataReader rdr = null;
@@ -258,6 +370,24 @@ namespace ConsoleApplication1 {
 			return;
 		}
 
+//////////////////////////////////////////////////////////////////////
+//
+// Function  : Main
+//
+// Purpose   : program entry point
+//
+// Inputs    : (none)
+//
+// Output    : (none)
+//
+// Returns   : nothing
+//
+// Example   : Main();
+//
+// Notes     : (none)
+//
+//////////////////////////////////////////////////////////////////////
+
 		[STAThread] // uses single threaded apartment model (STA)
 		static void Main(string[] args) {
 		Console.WriteLine("Content-Type: text/html\n\n");
@@ -270,27 +400,6 @@ namespace ConsoleApplication1 {
 		debug_print("<br/>Extra path information passed to the CGI program (env: PATH_INFO): " + System.Environment.GetEnvironmentVariable("PATH_INFO"));
 		debug_print("<br/>The translated version of the path (env: PATH_TRANSLATED): " + System.Environment.GetEnvironmentVariable("PATH_TRANSLATED"));
 
-		// string input_data = "";
-		if (System.Environment.GetEnvironmentVariable("REQUEST_METHOD").Equals("POST")) {
-			DataLength = Convert.ToInt32(System.Environment.GetEnvironmentVariable("CONTENT_LENGTH"));
-			debug_print("DataLength = " + DataLength);
-			if (DataLength > max_post_length) DataLength = max_post_length;  // Max length for POST data
-				for (int i = 0; i < DataLength; i++)
-					input_data += Convert.ToChar(Console.Read()).ToString();
-				// debug_print("<br/>Post Data length: " + DataLength.ToString() + " Post data: " + input_data);
-		}
-		else {
-			input_data = System.Environment.GetEnvironmentVariable("QUERY_STRING");
-			if ( input_data == null ) {
-				DataLength = 0;
-				input_data = "";
-				debug_print("<br/>The GET Query String was not specified");
-			}
-			else {
-				DataLength = input_data.Length;
-				debug_print("<br/>The GET Query String (env: QUERY_STRING): " + input_data);
-			}
-		}
 		parse_input_fields();
 		debug_print("<H3>num_vars = " + num_vars + "</H3>");
 
